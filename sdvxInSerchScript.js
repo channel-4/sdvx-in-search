@@ -9,10 +9,16 @@
 // @require     https://code.jquery.com/jquery-3.4.1.min.js
 // ==/UserScript==
 
-// (表示されている)曲についての情報を保存するオブジェクト
+// (表示されている)曲についての情報を格納
 let Songs = {
   info: []
 };
+
+// 現在開いているページについて
+let Page = {
+    // syllabary: 50音順, level: レベル別ページ
+    type: ''
+}
 
 /**
  * 右下に固定の検索用のinputを追加する
@@ -52,6 +58,27 @@ function addSearchBoxInBody() {
 }
 
 /**
+ * 開いているページがどの種類か返す(50音順か、レベル別か)
+ * @return {void}
+ */
+function getPageType() {
+    // ex: /sort/sort_01.htm
+    const pathname = location.pathname;
+
+    // 「_」で区切った後、後者の値を「.」で区切って前者の値を取る
+    // ex: /sort/sort_01.htm => 01.htm => 01
+    let sort_type = pathname.split('_')[1].split('.')[0];
+
+    // number型に変換してNaNが帰ってくる場合は50音順
+    if (Number.isNaN(parseInt(sort_type))) {
+      return 'syllabary';
+    }
+
+    // 数字が帰ってくる(= NaNでない)場合(1~20)はレベル別
+    return 'level';
+}
+
+/**
  * Songsオブジェクトのinfo配列に検索に必要な情報を保存する
  * @return {void}
  */
@@ -59,19 +86,30 @@ function saveSongInfosInDisplay() {
   // 全てのtrタグ取得
   const $tr_tags = $('tr');
 
+  // 曲名が入っているtdのindex番号
+  const song_name_index = (Page.type === 'syllabary') ? 4 : 2;
+
   for (let i=0; i < $tr_tags.length; i++) {
-    // 曲の表示・非表示のためのタグにあたるtrは子要素4つを持つ
-    // 4つ持ってないものは保存しない
-    if ($tr_tags[i].childElementCount !== 4) {
+    // 子要素の数
+    const tr_child_count = $tr_tags[i].childElementCount;
+
+    // 曲の表示・非表示のためのタグにあたるtrは50音順の時、8または9個
+    // 8, 9以外の場合は対象外
+    if (Page.type === 'syllabary' && tr_child_count !== 8 && tr_child_count !== 9) {
+      continue;
+    }
+
+    // レベル別の場合は4個になる, 他は対象外
+    if (Page.type === 'level' && tr_child_count !== 4) {
       continue;
     }
 
     // 表示・非表示にあたる要素
-    const $tr = $tr_tags.eq(i)
+    const $tr = $tr_tags.eq(i);
 
     // name: 曲名
     Songs.info.push({
-      name: $tr.children('td')[2].textContent,
+      name: $tr.children('td')[song_name_index].textContent,
       display_box: $tr
     });
   }
@@ -82,6 +120,9 @@ function saveSongInfosInDisplay() {
 
   // iframe内のcenterタグに要素が挿入されないように事前に削除しておく
   $('iframe').remove();
+
+  // 50音順か、レベル別かを取得して格納
+  Page.type = getPageType();
 
   // 画面上に列挙されている曲の情報取得(曲名, 表示・非表示する親のタグ要素)
   saveSongInfosInDisplay();
