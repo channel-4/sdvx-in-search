@@ -52,9 +52,9 @@ function addSearchBoxInBody() {
 }
 
 /**
-* Songsオブジェクトのinfo配列に検索に必要な情報を保存する
-* @return {void}
-*/
+ * Songsオブジェクトのinfo配列に検索に必要な情報を保存する
+ * @return {void}
+ */
 function saveSongInfosInDisplay() {
   // 全てのtrタグ取得
   const $tr_tags = $('tr');
@@ -93,15 +93,18 @@ function saveSongInfosInDisplay() {
 
   // 検索用のinputが動くたびに作動
   $input.on('input', function(){
-    // inputに入っている値取得(前後の空白は除去する)
-    const input_val = $input.val().trim();
+    // inputに入っている値取得(前後の空白は除去する, 検索用に大文字統一)
+    const input_val = $input.val().trim().toUpperCase();
 
-    Songs.info.forEach(function(info_array, index) {
+    Songs.info.forEach(function(info_array) {
+      const name = info_array.name.toUpperCase();
+      const display_box = info_array.display_box;
+
       // 部分一致していれば表示, そうでなければ非表示
-      if (info_array.name.indexOf(input_val) !== -1) {
-        info_array.display_box.show();
+      if (name.indexOf(input_val) !== -1) {
+        display_box.show();
       } else {
-        info_array.display_box.hide();
+        display_box.hide();
       }
     });
   });
